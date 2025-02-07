@@ -248,7 +248,7 @@ async def process_tutor_request(message: Message, state: FSMContext) -> None:
     api_key = os.getenv("YANDEX_API_KEY")
     gpt_model = 'yandexgpt-lite'
 
-    system_prompt = '''Анекдот расскажи на предложенную тему'''
+    system_prompt = '''Напиши возможное резюме на данный запрос'''
     user_prompt = message.text
 
     body = {
