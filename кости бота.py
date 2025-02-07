@@ -1,12 +1,90 @@
 import asyncio
 import os
+import psycopg2
 
+from psycopg2 import sql
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from dotenv import load_dotenv
+
+
+def insert_record_users(name, univer, direction, biography) -> None:
+    print('asdsdas')
+    try:
+        # Установление соединения с базой данных
+        connection = psycopg2.connect(
+            dbname='teacher',
+            user='postgres',
+            password='WfhtyjdHjvfy2007!!!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = connection.cursor()
+
+        # Использование параметризованного запроса для предотвращения SQL-инъекций
+        insert_query = sql.SQL("""
+            INSERT INTO users (name, univer, direction, biography)
+            VALUES (%s, %s, %s, %s)
+        """)
+
+        # Выполнение запроса
+        cursor.execute(insert_query, (name, univer, direction, biography))
+
+        # Подтверждение изменений
+        connection.commit()
+
+        print("Запись успешно добавлена в таблицу")
+
+    except Exception as error:
+        print(f"Произошла ошибка: {error}")
+
+    # finally:
+    #     if cursor:
+    #         cursor.close()
+    #     if connection:
+    #         connection.close()
+
+
+def insert_record_teachers(name, univer, direction, biography) -> None:
+    print('asdsdas')
+    try:
+        # Установление соединения с базой данных
+        connection = psycopg2.connect(
+            dbname='teacher',
+            user='postgres',
+            password='WfhtyjdHjvfy2007!!!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = connection.cursor()
+
+        # Использование параметризованного запроса для предотвращения SQL-инъекций
+        insert_query = sql.SQL("""
+            INSERT INTO teacher (name, univer, direction, biography)
+            VALUES (%s, %s, %s, %s)
+        """)
+
+        # Выполнение запроса
+        cursor.execute(insert_query, (name, univer, direction, biography))
+
+        # Подтверждение изменений
+        connection.commit()
+
+        print("Запись успешно добавлена в таблицу")
+
+    except Exception as error:
+        print(f"Произошла ошибка: {error}")
+
+    # finally:
+    #     if cursor:
+    #         cursor.close()
+    #     if connection:
+    #         connection.close()
 
 
 class User(StatesGroup):
@@ -74,9 +152,8 @@ async def taking_subject(message: Message, state: FSMContext) -> None:
         await message.answer("Пожалуйста, выберите 'Учитель' или 'Ученик' используя кнопки.")
 
 
-
 async def taking_id(message: Message, state: FSMContext) -> None:
-    await state.update_data(user_subject=message.text) # Сохраняем предметы (если это учитель)
+    await state.update_data(user_subject=message.text)  # Сохраняем предметы (если это учитель)
     await state.set_state(User.user_id)
     await message.answer('Пожалуйста, напишите свой тг-логин, чтобы с вами можно было связаться')
 
@@ -94,8 +171,13 @@ async def registrate_end(message: Message, state: FSMContext) -> None:
                    f"Тип: {user_type}\n" \
                    f"Предметы: {user_subject}\n" \
                    f"Telegram ID: {user_id}"
-    await message.answer(message_text) #нужно вставить сюда данные пользователя в формате таблицы с пунктами
-    await state.clear() # Очищаем состояние после регистрации
+    await message.answer(message_text)  # нужно вставить сюда данные пользователя в формате таблицы с пунктами
+    await state.clear()  # Очищаем состояние после регистрации
+
+    if user_type == "Студент":
+        insert_record_users(name=username, univer=None, direction=user_subject, biography=None)
+    if user_type == "Учитель":
+        insert_record_teachers(name=username, univer=None, direction=user_subject, biography=None)
 
 
 async def main() -> None:
@@ -106,10 +188,9 @@ async def main() -> None:
     dp.message.register(command_start, Command("start"))
     dp.message.register(registrate, Command("registrate"))
     dp.message.register(taking_type, User.username)  # Регистрируем taking_type для обработки имени
-    dp.message.register(taking_subject, User.user_type) # Регистрируем taking_subject для обработки выбора типа
-    dp.message.register(taking_id, User.user_subject) # Регистрируем taking_id для обработки предметов
-    dp.message.register(registrate_end, User.user_id) # Регистрируем registrate_end для завершения регистрации
-
+    dp.message.register(taking_subject, User.user_type)  # Регистрируем taking_subject для обработки выбора типа
+    dp.message.register(taking_id, User.user_subject)  # Регистрируем taking_id для обработки предметов
+    dp.message.register(registrate_end, User.user_id)  # Регистрируем registrate_end для завершения регистрации
 
     bot = Bot(token=bot_token)
     await dp.start_polling(bot)
